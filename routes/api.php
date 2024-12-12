@@ -31,3 +31,6 @@ Route::post('/insert_users', [UserController::class, 'store']);
 
 // Adicionar rota para atualizar usuários 
 Route::put('/update_user/{id}', [UserController::class, 'update']);
+
+// Adicionar rota para deletar usuários 
+Route::delete('/delete_user/{id}', [UserController::class, 'destroy']);

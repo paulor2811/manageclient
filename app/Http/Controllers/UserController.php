@@ -69,5 +69,12 @@ class UserController extends Controller
     // Encontra o usuário pelo ID e atualiza os dados 
     $user = User::findOrFail($id); $user->update($request->all()); 
     return response()->json($user, 200);
-    }   
+    }
+    public function destroy($id) { 
+        // Encontra o usuário pelo ID e deleta 
+        $user = User::findOrFail($id); 
+        $user->delete(); 
+        
+        return response()->json(null, 204); 
+    } 
 }
