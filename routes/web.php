@@ -18,6 +18,3 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/read_users', [UserController::class, 'index']);
-
-Route::post('/insert_users', [UserController::class, 'store']);
