@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http; // Adicione essa linha para usar o cliente HTTP
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -33,7 +35,8 @@ class UserController extends Controller
         
         // Buscar pelo telefone 
         $users = User::where('telefone', 'LIKE', '%' . $request->telefone . '%')->get(); 
-        return response()->json($users); }
+        return response()->json($users); 
+    }
 
     public function store(Request $request)
     {
@@ -49,32 +52,67 @@ class UserController extends Controller
             'email' => 'required|string|email|max:50',
         ]);
 
-        // Criação do usuário
-        $user = User::create($request->all());
+        Log::info('Dados recebidos para inserção:', $request->all());
 
-        return response()->json($user, 201);
+        try {
+            // Criação do usuário
+            $user = User::create($request->all());
+            Log::info('Usuário criado com sucesso:', $user->toArray());
+            return response()->json($user, 201);
+        } catch (\Exception $e) {
+            Log::error('Erro ao criar usuário:', ['message' => $e->getMessage()]);
+            return response()->json(['error' => 'Erro ao criar usuário.'], 500);
+        }
     }
-    public function update(Request $request, $id) { 
+        
+    public function updateByPhone(Request $request, $telefone) { 
         // Validação dos dados 
-        $request->validate([ 'nome' => 'sometimes|required|string|max:50', 
-        'cep' => 'sometimes|required|string|max:10', 
-        'endereco' => 'sometimes|required|string|max:50', 
-        'bairro' => 'sometimes|required|string|max:50', 
-        'cidade' => 'sometimes|required|string|max:50', 
-        'uf' => 'sometimes|required|string|max:2', 
-        'telefone' => 'sometimes|required|string|max:20', 
-        'email' => 'sometimes|required|string|email|max:50', 
-    ]); 
-    
-    // Encontra o usuário pelo ID e atualiza os dados 
-    $user = User::findOrFail($id); $user->update($request->all()); 
-    return response()->json($user, 200);
+        $request->validate([ 
+            'nome' => 'sometimes|required|string|max:50', 
+            'cep' => 'sometimes|required|string|max:10', 
+            'endereco' => 'sometimes|required|string|max:50', 
+            'bairro' => 'sometimes|required|string|max:50', 
+            'cidade' => 'sometimes|required|string|max:50', 
+            'uf' => 'sometimes|required|string|max:2', 
+            'telefone' => 'sometimes|required|string|max:20', 
+            'email' => 'sometimes|required|string|email|max:50', 
+        ]); 
+        // Encontra o usuário pelo telefone e atualiza os dados 
+        $user = User::where('telefone', $telefone)->firstOrFail();
+        $user->update($request->all()); 
+        return response()->json($user, 200);
     }
-    public function destroy($id) { 
+
+    public function destroy($id) 
+    { 
         // Encontra o usuário pelo ID e deleta 
-        $user = User::findOrFail($id); 
+        $user = User::findOrFail($id);
         $user->delete(); 
         
         return response()->json(null, 204); 
     } 
+
+    public function getCepDetails($cep) 
+    {
+        // Valida o formato do CEP 
+        if (!preg_match('/^\d{8}$/', $cep)) {
+            return response()->json(['error' => 'Formato de CEP inválido.'], 400);
+        } 
+
+        // Faz a requisição à API ViaCEP 
+        $response = Http::get("https://viacep.com.br/ws/{$cep}/json/");
+             
+        // Verifica se a requisição foi bem-sucedida 
+        if ($response->failed()) {
+            return response()->json(['error' => 'Erro ao consultar o CEP.'], $response->status());
+        } 
+            
+        // Verifica se o CEP existe 
+        $data = $response->json(); 
+        if (isset($data['erro']) && $data['erro'] === true) { 
+            return response()->json(['error' => 'CEP não encontrado.'], 404); 
+        } 
+            
+        return response()->json($data);
+    }
 }

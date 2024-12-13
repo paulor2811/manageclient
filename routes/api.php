@@ -30,7 +30,11 @@ Route::post('/search_by_phone', [UserController::class, 'searchByPhone']);
 Route::post('/insert_users', [UserController::class, 'store']);
 
 // Adicionar rota para atualizar usuários 
-Route::put('/update_user/{id}', [UserController::class, 'update']);
+Route::put('/update_user_by_phone/{telefone}', [UserController::class, 'updateByPhone']);
+
 
 // Adicionar rota para deletar usuários 
 Route::delete('/delete_user/{id}', [UserController::class, 'destroy']);
+
+// Adicionar rota para consultar CEP 
+Route::get('/via_cep/{cep}', [UserController::class, 'getCepDetails']);
